@@ -1,22 +1,76 @@
 name: "Docker Compose Health Check"
-description: "Check health status of Docker containers"
+description: "Check health status of Docker Compose services"
 inputs:
   max-retries:
-    description: "Maximum number of retry attempts (def: 30)"
+    description: "Maximum number of retry attempts"
     required: false
     default: "30"
   retry-interval:
-    description: "Interval between retries in seconds (def: 10)"
+    description: "Interval between retries in seconds"
     required: false
     default: "10"
   compose-file:
-    description: "Path to the docker-compose file (def: docker-compose.yml)"
+    description: "Path to the docker-compose file"
     required: false
     default: "docker-compose.yml"
 runs:
-  using: "docker"
-  image: "Dockerfile"
-  args:
-    - ${{ inputs.max-retries }}
-    - ${{ inputs.retry-interval }}
-    - ${{ inputs.compose-file }}
+  using: "composite"
+  steps:
+    - run: |
+        #!/bin/bash
+        set -e
+
+        max_retries=${{ inputs.max-retries }}
+        retry_interval=${{ inputs.retry-interval }}
+        compose_file=${{ inputs.compose-file }}
+
+        echo "Starting Docker Compose Health Check"
+        echo "Max retries: $max_retries"
+        echo "Retry interval: $retry_interval seconds"
+        echo "Compose file: $compose_file"
+
+        check_services() {
+          if ! docker-compose -f "$compose_file" ps --services --filter "status=running" | grep -q .; then
+            echo "No services are running"
+            return 1
+          fi
+
+          local not_ready=false
+          while read -r service; do
+            local container_id=$(docker-compose -f "$compose_file" ps -q $service)
+            local status=$(docker inspect --format='{{.State.Status}}' "$container_id")
+            local health=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}N/A{{end}}' "$container_id")
+            
+            echo "Checking service $service: Status=$status, Health=$health"
+            
+            if [[ "$status" != "running" ]] || [[ "$health" != "healthy" && "$health" != "N/A" ]]; then
+              echo "Service $service is not ready. Status: $status, Health: $health"
+              not_ready=true
+            fi
+          done < <(docker-compose -f "$compose_file" ps --services)
+
+          if $not_ready; then
+            return 1
+          else
+            return 0
+          fi
+        }
+
+        for i in $(seq 1 $max_retries); do
+          echo "Attempt $i of $max_retries"
+          if ! check_services; then
+            echo "Waiting for services to be ready... (Attempt $i/$max_retries)"
+            sleep $retry_interval
+          else
+            echo "All services are ready!"
+            docker-compose -f "$compose_file" ps
+            exit 0
+          fi
+          if [ $i -eq $max_retries ]; then
+            echo "Services did not become ready within the allocated time"
+            docker-compose -f "$compose_file" ps
+            docker-compose -f "$compose_file" logs
+            exit 1
+          fi
+        done
+      shell: bash
