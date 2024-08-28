@@ -18,7 +18,7 @@ This GitHub Action checks the health status of services started by Docker Compos
 
 ## Usage
 
-```
+```yaml
 - uses: krystianslowik/docker-compose-health-check-action@v1.1.0
   with:
     max-retries: 30
@@ -51,7 +51,7 @@ This GitHub Action checks the health status of services started by Docker Compos
 
 ## Example workflow
 
-```
+```yaml
 name: CI
 on: [push]
 jobs:
