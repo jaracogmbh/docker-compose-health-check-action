@@ -27,7 +27,7 @@ check_services() {
             echo "Container $name is not ready. Status: $status, Health: $health"
             not_ready=true
         fi
-    done < <(docker compose -f "$compose_file" ps -q)
+    done < <(docker-compose -f "$compose_file" ps -q)
 
     if $not_ready; then
         return 1
@@ -47,8 +47,8 @@ for i in $(seq 1 $max_retries); do
     fi
     if [ $i -eq $max_retries ]; then
         echo "Services did not become ready within the allocated time"
-        docker compose -f "$compose_file" ps
-        docker compose -f "$compose_file" logs
+        docker-compose -f "$compose_file" ps
+        docker-compose -f "$compose_file" logs
         exit 1
     fi
 done
