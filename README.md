@@ -1,3 +1,5 @@
+<img src="assets/logo-docker-compose-health-check.png" alt="Docker Compose Health Check Logo" width="128">
+
 # Docker Compose Health Check Action
 
 This GitHub Action checks the health status of services started by Docker Compose, ensuring they are fully operational before proceeding with subsequent steps in your workflow.
