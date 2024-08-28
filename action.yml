@@ -13,6 +13,14 @@ inputs:
     description: "Path to the docker-compose file"
     required: false
     default: "docker-compose.yml"
+  skip-exited:
+    description: "Skip checking exited containers"
+    required: false
+    default: "false"
+  skip-no-healthcheck:
+    description: "Skip checking containers without health checks"
+    required: false
+    default: "false"
 runs:
   using: "composite"
   steps:
@@ -30,15 +38,19 @@ runs:
         max_retries=${{ inputs.max-retries }}
         retry_interval=${{ inputs.retry-interval }}
         compose_file=${{ inputs.compose-file }}
+        skip_exited=${{ inputs.skip-exited }}
+        skip_no_healthcheck=${{ inputs.skip-no-healthcheck }}
 
         echo "Starting Docker Compose Health Check"
         echo "Max retries: $max_retries"
         echo "Retry interval: $retry_interval seconds"
         echo "Compose file: $compose_file"
+        echo "Skip exited containers: $skip_exited"
+        echo "Skip containers without health checks: $skip_no_healthcheck"
 
         check_services() {
-          if ! docker-compose -f "$compose_file" ps --services --filter "status=running" | grep -q .; then
-            echo "No services are running"
+          if ! docker-compose -f "$compose_file" ps --services | grep -q .; then
+            echo "No services found"
             return 1
           fi
 
@@ -50,6 +62,16 @@ runs:
             
             echo "Checking service $service: Status=$status, Health=$health"
             
+            if [[ "$status" == "exited" && "$skip_exited" == "true" ]]; then
+              echo "Skipping exited container $service"
+              continue
+            fi
+
+            if [[ "$health" == "N/A" && "$skip_no_healthcheck" == "true" ]]; then
+              echo "Skipping container $service without health check"
+              continue
+            fi
+
             if [[ "$status" != "running" ]] || [[ "$health" != "healthy" && "$health" != "N/A" ]]; then
               echo "Service $service is not ready. Status: $status, Health: $health"
               not_ready=true
