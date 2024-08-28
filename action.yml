@@ -1,0 +1,22 @@
+name: "Docker Compose Health Check"
+description: "Check health status of Docker containers"
+inputs:
+  max-retries:
+    description: "Maximum number of retry attempts (def: 30)"
+    required: false
+    default: "30"
+  retry-interval:
+    description: "Interval between retries in seconds (def: 10)"
+    required: false
+    default: "10"
+  compose-file:
+    description: "Path to the docker-compose file (def: docker-compose.yml)"
+    required: false
+    default: "docker-compose.yml"
+runs:
+  using: "docker"
+  image: "Dockerfile"
+  args:
+    - ${{ inputs.max-retries }}
+    - ${{ inputs.retry-interval }}
+    - ${{ inputs.compose-file }}
