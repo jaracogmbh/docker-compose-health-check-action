@@ -6,16 +6,14 @@ max_retries=${INPUT_MAX_RETRIES:-30}
 retry_interval=${INPUT_RETRY_INTERVAL:-10}
 compose_file=${INPUT_COMPOSE_FILE:-"docker-compose.yml"}
 
-# Function for formatted logging
 log() {
     local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
-    echo -e "\033[1;34m[${timestamp}]\033[0m $1"
+    echo "[$timestamp] $1"
 }
 
-# Function for error logging
 log_error() {
     local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
-    echo -e "\033[1;31m[${timestamp} ERROR]\033[0m $1" >&2
+    echo "[$timestamp ERROR] $1" >&2
 }
 
 log "Starting Docker Compose Health Check"
@@ -57,7 +55,7 @@ for i in $(seq 1 $max_retries); do
     else
         log "All services are ready!"
         log "Current Docker container status:"
-        docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Health}}"
+        docker ps --format "table {{.Names}}\t{{.Status}}"
         exit 0
     fi
     if [ $i -eq $max_retries ]; then
@@ -67,7 +65,7 @@ for i in $(seq 1 $max_retries); do
         log_error "Docker Compose logs:"
         docker-compose -f "$compose_file" logs
         log_error "Current Docker container status:"
-        docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Health}}"
+        docker ps --format "table {{.Names}}\t{{.Status}}"
         exit 1
     fi
 done
