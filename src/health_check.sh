@@ -34,7 +34,7 @@ check_services() {
         
         log "Checking container $name: Status=$status, Health=$health"
         
-        if [[ "$status" != "running" ]] || [[ "$health" == "unhealthy" ]] || [[ "$health" == "starting" ]]; then
+        if [[ "$status" != "running" ]] || [[ "$health" != "healthy" && "$health" != "N/A" ]]; then
             log_error "Container $name is not ready. Status: $status, Health: $health"
             not_ready=true
         fi
@@ -55,7 +55,7 @@ for i in $(seq 1 $max_retries); do
     else
         log "All services are ready!"
         log "Current Docker container status:"
-        docker ps --format "table {{.Names}}\t{{.Status}}"
+        docker-compose -f "$compose_file" ps
         exit 0
     fi
     if [ $i -eq $max_retries ]; then
@@ -64,8 +64,6 @@ for i in $(seq 1 $max_retries); do
         docker-compose -f "$compose_file" ps
         log_error "Docker Compose logs:"
         docker-compose -f "$compose_file" logs
-        log_error "Current Docker container status:"
-        docker ps --format "table {{.Names}}\t{{.Status}}"
         exit 1
     fi
 done
