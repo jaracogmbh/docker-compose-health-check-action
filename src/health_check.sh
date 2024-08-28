@@ -1,15 +1,27 @@
 #!/bin/bash
 
-max_retries=${1:-30}
-retry_interval=${2:-10}
-compose_file=${3:-"docker-compose.yml"}
+set -e
+
+max_retries=${INPUT_MAX_RETRIES:-30}
+retry_interval=${INPUT_RETRY_INTERVAL:-10}
+compose_file=${INPUT_COMPOSE_FILE:-"docker-compose.yml"}
+
+echo "Max retries: $max_retries"
+echo "Retry interval: $retry_interval"
+echo "Compose file: $compose_file"
 
 check_services() {
     local not_ready=false
     while read -r container_id; do
+        if [ -z "$container_id" ]; then
+            echo "No containers found. Is Docker Compose running?"
+            return 1
+        fi
         local status=$(docker inspect --format='{{.State.Status}}' "$container_id")
         local health=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}N/A{{end}}' "$container_id")
         local name=$(docker inspect --format='{{.Name}}' "$container_id" | sed 's/^\///')
+        
+        echo "Checking container $name: Status=$status, Health=$health"
         
         if [[ "$status" != "running" ]] || [[ "$health" == "unhealthy" ]] || [[ "$health" == "starting" ]]; then
             echo "Container $name is not ready. Status: $status, Health: $health"
@@ -25,6 +37,7 @@ check_services() {
 }
 
 for i in $(seq 1 $max_retries); do
+    echo "Attempt $i of $max_retries"
     if ! check_services; then
         echo "Waiting for services to be ready... (Attempt $i/$max_retries)"
         sleep $retry_interval
