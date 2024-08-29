@@ -14,6 +14,18 @@ This GitHub Action checks the health status of services started by Docker Compos
 - Option to skip exited containers
 - Option to skip containers without health checks
 
+## Compatibility:
+
+This action is compatible with:
+
+- **Ubuntu:** `ubuntu-latest` (Linux-x86_64)
+
+## Pre-requisites
+
+- GitHub Actions runner with Docker installed. If not installed, it will be installed automatically.
+- A `docker-compose.yml` file in your repository
+- Services in your Docker Compose file should ideally have health checks defined.
+
 ## Usage
 
 ```yaml
