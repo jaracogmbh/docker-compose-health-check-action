@@ -1,8 +1,10 @@
-<img src="assets/logo-docker-compose-health-check.png" alt="Docker Compose Health Check Logo" width="128">
+<img src="assets/logo.png" alt="Docker Compose Health Check Logo" width="128">
 
 # Docker Compose Health Check Action
 
 This GitHub Action checks the health status of services started by Docker Compose, ensuring they are fully operational before proceeding with subsequent steps in your workflow.
+
+> **Note:** This is a pre-release (`v0.0.1-pre`). Expect more stable versions soon, with improved features and refactoring for better reliability.
 
 ## Features
 
@@ -12,16 +14,10 @@ This GitHub Action checks the health status of services started by Docker Compos
 - Option to skip exited containers
 - Option to skip containers without health checks
 
-## Pre-requisites
-
-- GitHub Actions runner with Docker installed. If not installed, it will be installed automatically.
-- A `docker-compose.yml` file in your repository
-- Services in your Docker Compose file should ideally have health checks defined.
-
 ## Usage
 
 ```yaml
-- uses: krystianslowik/docker-compose-health-check-action@v1.1.0
+- uses: jaracogmbh/docker-compose-health-check-action@v0.0.1-pre
   with:
     max-retries: 30
     retry-interval: 10
@@ -66,7 +62,7 @@ jobs:
         run: docker-compose up -d
 
       - name: Check service health
-        uses: krystianslowik/docker-compose-health-check-action@v1.1.0
+        uses: jaracogmbh/docker-compose-health-check-action@v0.0.1-pre
         with:
           max-retries: 30
           retry-interval: 10
@@ -93,3 +89,5 @@ If the action is failing, check the following:
 2.  Verify that the services have appropriate health checks defined.
 3.  Check the logs of your services to see if there are any startup issues.
 4.  Increase `max-retries` or `retry-interval` if your services take longer to start up.
+
+<div><img src="assets/jaraco_logo_software_engineer.png" width="200px" align="right"></div>
