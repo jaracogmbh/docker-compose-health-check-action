@@ -4,12 +4,11 @@
 
 This GitHub Action checks the health status of services started by Docker Compose, ensuring they are fully operational before proceeding with subsequent steps in your workflow.
 
-> **Note:** This is a pre-release (`v0.0.1-pre`). Expect more stable versions soon, with improved features and refactoring for better reliability.
+> **Note:** This is a pre-release (`v1.0.0`). Expect more stable versions soon, with improved features and refactoring for better reliability.
 
 ## Features
 
-- Automatically installs Docker Compose if not present
-- Checks the health status of Docker Compose services
+- Checks the health status of Docker containers
 - Configurable retry attempts and intervals
 - Option to skip exited containers
 - Option to skip containers without health checks
@@ -29,7 +28,7 @@ This action is compatible with:
 ## Usage
 
 ```yaml
-- uses: jaracogmbh/docker-compose-health-check-action@v0.0.1-pre
+- uses: jaracogmbh/docker-compose-health-check-action@v1.0.0
   with:
     max-retries: 30
     retry-interval: 10
@@ -74,7 +73,7 @@ jobs:
         run: docker-compose up -d
 
       - name: Check service health
-        uses: jaracogmbh/docker-compose-health-check-action@v0.0.1-pre
+        uses: jaracogmbh/docker-compose-health-check-action@v1.0.0
         with:
           max-retries: 30
           retry-interval: 10
