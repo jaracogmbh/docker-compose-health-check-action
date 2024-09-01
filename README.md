@@ -4,8 +4,6 @@
 
 This GitHub Action checks the health status of services started by Docker Compose, ensuring they are fully operational before proceeding with subsequent steps in your workflow.
 
-> **Note:** This is a pre-release (`v1.0.0`). Expect more stable versions soon, with improved features and refactoring for better reliability.
-
 ## Features
 
 - Checks the health status of Docker containers
