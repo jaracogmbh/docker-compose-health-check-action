@@ -1,14 +1,18 @@
 import { Logger } from "../utils/logger";
 import { execCommand } from "../utils/execCommand";
 
+const checkDockerCommand = "command -v docker";
+const downloadDockerScriptCommand = `curl -fsSL https://get.docker.com -o get-docker.sh`;
+const runDockerScriptCommand = `sh get-docker.sh`;
+
 export async function checkDockerInstallation(): Promise<void> {
   try {
-    const isInstalled = await execCommand("command -v docker");
+    const isInstalled = await execCommand(checkDockerCommand);
     if (!isInstalled) {
       Logger.info("Docker is not installed. Installing Docker...");
 
-      await execCommand(`curl -fsSL https://get.docker.com -o get-docker.sh`);
-      await execCommand(`sh get-docker.sh`);
+      await execCommand(downloadDockerScriptCommand);
+      await execCommand(runDockerScriptCommand);
       Logger.info("Docker installed successfully.");
     } else {
       Logger.info("Docker is already installed.");

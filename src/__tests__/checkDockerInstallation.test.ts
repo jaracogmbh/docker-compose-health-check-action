@@ -8,6 +8,11 @@ jest.mock("../utils/execCommand");
 describe("checkDockerInstallation", () => {
   const mockExecCommand = execCommand as jest.Mock;
 
+  const dockerCheckCommand = "command -v docker";
+  const downloadDockerScriptCommand =
+    "curl -fsSL https://get.docker.com -o get-docker.sh";
+  const runDockerScriptCommand = "sh get-docker.sh";
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -28,10 +33,8 @@ describe("checkDockerInstallation", () => {
     expect(Logger.info).toHaveBeenCalledWith(
       "Docker is not installed. Installing Docker..."
     );
-    expect(execCommand).toHaveBeenCalledWith(
-      "curl -fsSL https://get.docker.com -o get-docker.sh"
-    );
-    expect(execCommand).toHaveBeenCalledWith("sh get-docker.sh");
+    expect(execCommand).toHaveBeenCalledWith(downloadDockerScriptCommand);
+    expect(execCommand).toHaveBeenCalledWith(runDockerScriptCommand);
     expect(Logger.info).toHaveBeenCalledWith("Docker installed successfully.");
   });
 

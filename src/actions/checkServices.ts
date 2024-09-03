@@ -3,13 +3,64 @@ import { execCommand } from "../utils/execCommand";
 import { getServiceNames } from "./getServiceNames";
 import { CheckServicesOptions } from "../types";
 
+const dockerPsCommand = (service: string) => `docker ps -q -f name=${service}`;
+const inspectStatusCommand = (containerId: string) =>
+  `docker inspect --format='{{.State.Status}}' ${containerId}`;
+const inspectHealthCommand = (containerId: string) =>
+  `docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}N/A{{end}}' ${containerId}`;
+
+const logAttemptMessage = (attempt: number, maxRetries: number) =>
+  `\n-----------------------\nAttempt ${attempt} of ${maxRetries}`;
+
+const logAttemptCompletedMessage = (
+  attempt: number,
+  maxRetries: number,
+  retryInterval: number
+) =>
+  `\nAttempt ${attempt} completed, ${
+    maxRetries - attempt
+  } left. \nWaiting ${retryInterval} seconds for containers to become healthy. \n`;
+
+const logNoServicesFoundMessage = "No services found";
+
+const logNoRunningContainerMessage = (service: string) =>
+  `No running container found for service: ${service}\n`;
+
+const logSkippingContainerMessage = (service: string, containerId: string) =>
+  `Skipping container ${service} because it is not running. Container: [${containerId}]\n`;
+
+const logServiceStatusMessage = (
+  service: string,
+  containerId: string,
+  status: string,
+  health: string
+) =>
+  `Service: ${service}\n  Container: [${containerId}] | Status: [${status.toUpperCase()}] |  Health: [${health.toUpperCase()}]\n`;
+
+const logSkippingNoHealthcheckMessage = (
+  service: string,
+  containerId: string,
+  status: string,
+  health: string
+) =>
+  `Skipping container ${service} without health check. Container: [${containerId}] | Status: [${status.toUpperCase()}] |  Health: [${health.toUpperCase()}]\n`;
+
+const logServiceNotReadyMessage = (
+  service: string,
+  containerId: string,
+  status: string,
+  health: string
+) =>
+  `Service: ${service} is not ready.  Container: [${containerId}] | Status: [${status.toUpperCase()}] |  Health: [${health.toUpperCase()}]\n`;
+
+const logErrorDuringServiceCheckMessage = (errorMessage: string) =>
+  `\nError during services check: ${errorMessage}`;
+
 export async function checkServices(
   options: CheckServicesOptions
 ): Promise<boolean> {
   for (let i = 1; i <= options.maxRetries; i++) {
-    Logger.info(
-      `\n-----------------------\nAttempt ${i} of ${options.maxRetries}`
-    );
+    Logger.info(logAttemptMessage(i, options.maxRetries));
 
     const allHealthy = await checkAllServices(options);
 
@@ -19,9 +70,7 @@ export async function checkServices(
 
     if (i < options.maxRetries) {
       Logger.info(
-        `\nAttempt ${i} completed, ${options.maxRetries - i} left. \nWaiting ${
-          options.retryInterval
-        } seconds for containers to become healthy. \n`
+        logAttemptCompletedMessage(i, options.maxRetries, options.retryInterval)
       );
       await new Promise((resolve) =>
         setTimeout(resolve, options.retryInterval * 1000)
@@ -39,56 +88,52 @@ async function checkAllServices(
     const services = getServiceNames(options.composeFile);
 
     if (!services.length) {
-      Logger.error("No services found");
+      Logger.error(logNoServicesFoundMessage);
       return false;
     }
 
     let allHealthy = true;
 
     for (const service of services) {
-      const containerIds = (
-        await execCommand(`docker ps -q -f name=${service}`)
-      )
+      const containerIds = (await execCommand(dockerPsCommand(service)))
         .trim()
         .split("\n");
 
       if (containerIds.length === 0 || !containerIds[0].trim()) {
         if (!options.skipExited) {
-          Logger.warning(
-            `No running container found for service: ${service}\n`
-          );
+          Logger.warning(logNoRunningContainerMessage(service));
           allHealthy = false;
         }
         continue;
       }
 
       for (const containerId of containerIds) {
-        const status = await execCommand(
-          `docker inspect --format='{{.State.Status}}' ${containerId}`
-        );
+        const status = await execCommand(inspectStatusCommand(containerId));
 
         if (status.trim() !== "running" && options.skipExited) {
-          Logger.info(
-            `Skipping container ${service} because it is not running. Container: [${containerId}]\n`
-          );
+          Logger.info(logSkippingContainerMessage(service, containerId));
           continue;
         }
 
-        const health = await execCommand(
-          `docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}N/A{{end}}' ${containerId}`
-        );
+        const health = await execCommand(inspectHealthCommand(containerId));
 
         Logger.info(
-          `Service: ${service}\n  Container: [${containerId}] | Status: [${status
-            .trim()
-            .toUpperCase()}] |  Health: [${health.trim().toUpperCase()}]\n`
+          logServiceStatusMessage(
+            service,
+            containerId,
+            status.trim(),
+            health.trim()
+          )
         );
 
         if (health.trim() === "N/A" && options.skipNoHealthcheck) {
           Logger.warning(
-            `Skipping container ${service} without health check. Container: [${containerId}] | Status: [${status
-              .trim()
-              .toUpperCase()}] |  Health: [${health.trim().toUpperCase()}]\n`
+            logSkippingNoHealthcheckMessage(
+              service,
+              containerId,
+              status.trim(),
+              health.trim()
+            )
           );
           continue;
         }
@@ -98,9 +143,12 @@ async function checkAllServices(
           (health.trim() !== "healthy" && health.trim() !== "N/A")
         ) {
           Logger.warning(
-            `Service: ${service} is not ready.  Container: [${containerId}] | Status: [${status
-              .trim()
-              .toUpperCase()}] |  Health: [${health.trim().toUpperCase()}]\n`
+            logServiceNotReadyMessage(
+              service,
+              containerId,
+              status.trim(),
+              health.trim()
+            )
           );
           allHealthy = false;
         }
@@ -110,9 +158,9 @@ async function checkAllServices(
     return allHealthy;
   } catch (error) {
     Logger.setFailed(
-      `\nError during services check: ${
-        error instanceof Error ? error.message : error
-      }`
+      logErrorDuringServiceCheckMessage(
+        error instanceof Error ? error.message : String(error)
+      )
     );
     return false;
   }
