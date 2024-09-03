@@ -22,5 +22,11 @@ inputs:
     required: false
     default: "false"
 runs:
-  using: "node20"
-  main: "dist/index.js"
+  using: "composite"
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+    - name: Run the main job
+      run: node dist/index.js
