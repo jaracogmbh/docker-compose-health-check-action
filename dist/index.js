@@ -29082,6 +29082,9 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.checkDockerInstallation = checkDockerInstallation;
 var logger_1 = __nccwpck_require__(8836);
 var execCommand_1 = __nccwpck_require__(637);
+var checkDockerCommand = "command -v docker";
+var downloadDockerScriptCommand = "curl -fsSL https://get.docker.com -o get-docker.sh";
+var runDockerScriptCommand = "sh get-docker.sh";
 function checkDockerInstallation() {
     return __awaiter(this, void 0, void 0, function () {
         var isInstalled, error_1;
@@ -29089,15 +29092,15 @@ function checkDockerInstallation() {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 6, , 7]);
-                    return [4, (0, execCommand_1.execCommand)("command -v docker")];
+                    return [4, (0, execCommand_1.execCommand)(checkDockerCommand)];
                 case 1:
                     isInstalled = _a.sent();
                     if (!!isInstalled) return [3, 4];
                     logger_1.Logger.info("Docker is not installed. Installing Docker...");
-                    return [4, (0, execCommand_1.execCommand)("curl -fsSL https://get.docker.com -o get-docker.sh")];
+                    return [4, (0, execCommand_1.execCommand)(downloadDockerScriptCommand)];
                 case 2:
                     _a.sent();
-                    return [4, (0, execCommand_1.execCommand)("sh get-docker.sh")];
+                    return [4, (0, execCommand_1.execCommand)(runDockerScriptCommand)];
                 case 3:
                     _a.sent();
                     logger_1.Logger.info("Docker installed successfully.");
@@ -29165,6 +29168,38 @@ exports.checkServices = checkServices;
 var logger_1 = __nccwpck_require__(8836);
 var execCommand_1 = __nccwpck_require__(637);
 var getServiceNames_1 = __nccwpck_require__(2262);
+var dockerPsCommand = function (service) { return "docker ps -q -f name=".concat(service); };
+var inspectStatusCommand = function (containerId) {
+    return "docker inspect --format='{{.State.Status}}' ".concat(containerId);
+};
+var inspectHealthCommand = function (containerId) {
+    return "docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}N/A{{end}}' ".concat(containerId);
+};
+var logAttemptMessage = function (attempt, maxRetries) {
+    return "\n-----------------------\nAttempt ".concat(attempt, " of ").concat(maxRetries);
+};
+var logAttemptCompletedMessage = function (attempt, maxRetries, retryInterval) {
+    return "\nAttempt ".concat(attempt, " completed, ").concat(maxRetries - attempt, " left. \nWaiting ").concat(retryInterval, " seconds for containers to become healthy. \n");
+};
+var logNoServicesFoundMessage = "No services found";
+var logNoRunningContainerMessage = function (service) {
+    return "No running container found for service: ".concat(service, "\n");
+};
+var logSkippingContainerMessage = function (service, containerId) {
+    return "Skipping container ".concat(service, " because it is not running. Container: [").concat(containerId, "]\n");
+};
+var logServiceStatusMessage = function (service, containerId, status, health) {
+    return "Service: ".concat(service, "\n  Container: [").concat(containerId, "] | Status: [").concat(status.toUpperCase(), "] |  Health: [").concat(health.toUpperCase(), "]\n");
+};
+var logSkippingNoHealthcheckMessage = function (service, containerId, status, health) {
+    return "Skipping container ".concat(service, " without health check. Container: [").concat(containerId, "] | Status: [").concat(status.toUpperCase(), "] |  Health: [").concat(health.toUpperCase(), "]\n");
+};
+var logServiceNotReadyMessage = function (service, containerId, status, health) {
+    return "Service: ".concat(service, " is not ready.  Container: [").concat(containerId, "] | Status: [").concat(status.toUpperCase(), "] |  Health: [").concat(health.toUpperCase(), "]\n");
+};
+var logErrorDuringServiceCheckMessage = function (errorMessage) {
+    return "\nError during services check: ".concat(errorMessage);
+};
 function checkServices(options) {
     return __awaiter(this, void 0, void 0, function () {
         var i, allHealthy;
@@ -29175,7 +29210,7 @@ function checkServices(options) {
                     _a.label = 1;
                 case 1:
                     if (!(i <= options.maxRetries)) return [3, 5];
-                    logger_1.Logger.info("\n-----------------------\nAttempt ".concat(i, " of ").concat(options.maxRetries));
+                    logger_1.Logger.info(logAttemptMessage(i, options.maxRetries));
                     return [4, checkAllServices(options)];
                 case 2:
                     allHealthy = _a.sent();
@@ -29183,7 +29218,7 @@ function checkServices(options) {
                         return [2, true];
                     }
                     if (!(i < options.maxRetries)) return [3, 4];
-                    logger_1.Logger.info("\nAttempt ".concat(i, " completed, ").concat(options.maxRetries - i, " left. \nWaiting ").concat(options.retryInterval, " seconds for containers to become healthy. \n"));
+                    logger_1.Logger.info(logAttemptCompletedMessage(i, options.maxRetries, options.retryInterval));
                     return [4, new Promise(function (resolve) {
                             return setTimeout(resolve, options.retryInterval * 1000);
                         })];
@@ -29207,7 +29242,7 @@ function checkAllServices(options) {
                     _b.trys.push([0, 9, , 10]);
                     services = (0, getServiceNames_1.getServiceNames)(options.composeFile);
                     if (!services.length) {
-                        logger_1.Logger.error("No services found");
+                        logger_1.Logger.error(logNoServicesFoundMessage);
                         return [2, false];
                     }
                     allHealthy = true;
@@ -29216,14 +29251,14 @@ function checkAllServices(options) {
                 case 1:
                     if (!(_i < services_1.length)) return [3, 8];
                     service = services_1[_i];
-                    return [4, (0, execCommand_1.execCommand)("docker ps -q -f name=".concat(service))];
+                    return [4, (0, execCommand_1.execCommand)(dockerPsCommand(service))];
                 case 2:
                     containerIds = (_b.sent())
                         .trim()
                         .split("\n");
                     if (containerIds.length === 0 || !containerIds[0].trim()) {
                         if (!options.skipExited) {
-                            logger_1.Logger.warning("No running container found for service: ".concat(service, "\n"));
+                            logger_1.Logger.warning(logNoRunningContainerMessage(service));
                             allHealthy = false;
                         }
                         return [3, 7];
@@ -29233,30 +29268,24 @@ function checkAllServices(options) {
                 case 3:
                     if (!(_a < containerIds_1.length)) return [3, 7];
                     containerId = containerIds_1[_a];
-                    return [4, (0, execCommand_1.execCommand)("docker inspect --format='{{.State.Status}}' ".concat(containerId))];
+                    return [4, (0, execCommand_1.execCommand)(inspectStatusCommand(containerId))];
                 case 4:
                     status_1 = _b.sent();
                     if (status_1.trim() !== "running" && options.skipExited) {
-                        logger_1.Logger.info("Skipping container ".concat(service, " because it is not running. Container: [").concat(containerId, "]\n"));
+                        logger_1.Logger.info(logSkippingContainerMessage(service, containerId));
                         return [3, 6];
                     }
-                    return [4, (0, execCommand_1.execCommand)("docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}N/A{{end}}' ".concat(containerId))];
+                    return [4, (0, execCommand_1.execCommand)(inspectHealthCommand(containerId))];
                 case 5:
                     health = _b.sent();
-                    logger_1.Logger.info("Service: ".concat(service, "\n  Container: [").concat(containerId, "] | Status: [").concat(status_1
-                        .trim()
-                        .toUpperCase(), "] |  Health: [").concat(health.trim().toUpperCase(), "]\n"));
+                    logger_1.Logger.info(logServiceStatusMessage(service, containerId, status_1.trim(), health.trim()));
                     if (health.trim() === "N/A" && options.skipNoHealthcheck) {
-                        logger_1.Logger.warning("Skipping container ".concat(service, " without health check. Container: [").concat(containerId, "] | Status: [").concat(status_1
-                            .trim()
-                            .toUpperCase(), "] |  Health: [").concat(health.trim().toUpperCase(), "]\n"));
+                        logger_1.Logger.warning(logSkippingNoHealthcheckMessage(service, containerId, status_1.trim(), health.trim()));
                         return [3, 6];
                     }
                     if (status_1.trim() !== "running" ||
                         (health.trim() !== "healthy" && health.trim() !== "N/A")) {
-                        logger_1.Logger.warning("Service: ".concat(service, " is not ready.  Container: [").concat(containerId, "] | Status: [").concat(status_1
-                            .trim()
-                            .toUpperCase(), "] |  Health: [").concat(health.trim().toUpperCase(), "]\n"));
+                        logger_1.Logger.warning(logServiceNotReadyMessage(service, containerId, status_1.trim(), health.trim()));
                         allHealthy = false;
                     }
                     _b.label = 6;
@@ -29269,7 +29298,7 @@ function checkAllServices(options) {
                 case 8: return [2, allHealthy];
                 case 9:
                     error_1 = _b.sent();
-                    logger_1.Logger.setFailed("\nError during services check: ".concat(error_1 instanceof Error ? error_1.message : error_1));
+                    logger_1.Logger.setFailed(logErrorDuringServiceCheckMessage(error_1 instanceof Error ? error_1.message : String(error_1)));
                     return [2, false];
                 case 10: return [2];
             }
