@@ -10,24 +10,24 @@ const inspectHealthCommand = (containerId: string) =>
   `docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}N/A{{end}}' ${containerId}`;
 
 const logAttemptMessage = (attempt: number, maxRetries: number) =>
-  `\n-----------------------\nAttempt ${attempt} of ${maxRetries}`;
+  `-----------------------\nAttempt ${attempt} of ${maxRetries}`;
 
 const logAttemptCompletedMessage = (
   attempt: number,
   maxRetries: number,
   retryInterval: number
 ) =>
-  `\nAttempt ${attempt} completed, ${
+  `Attempt ${attempt} completed, ${
     maxRetries - attempt
-  } left. \nWaiting ${retryInterval} seconds for containers to become healthy. \n`;
+  } left. \nWaiting ${retryInterval} seconds for containers to become healthy. `;
 
 const logNoServicesFoundMessage = "No services found";
 
 const logNoRunningContainerMessage = (service: string) =>
-  `No running container found for service: ${service}\n`;
+  `No running container found for service: ${service}`;
 
 const logSkippingContainerMessage = (service: string, containerId: string) =>
-  `Skipping container ${service} because it is not running. Container: [${containerId}]\n`;
+  `Skipping container ${service} because it is not running. Container: [${containerId}]`;
 
 const logServiceStatusMessage = (
   service: string,
@@ -35,7 +35,7 @@ const logServiceStatusMessage = (
   status: string,
   health: string
 ) =>
-  `Service: ${service}\n  Container: [${containerId}] | Status: [${status.toUpperCase()}] |  Health: [${health.toUpperCase()}]\n`;
+  `Service: ${service}\n  Container: [${containerId}] | Status: [${status.toUpperCase()}] |  Health: [${health.toUpperCase()}]`;
 
 const logSkippingNoHealthcheckMessage = (
   service: string,
@@ -43,7 +43,7 @@ const logSkippingNoHealthcheckMessage = (
   status: string,
   health: string
 ) =>
-  `Skipping container ${service} without health check. Container: [${containerId}] | Status: [${status.toUpperCase()}] |  Health: [${health.toUpperCase()}]\n`;
+  `Skipping container ${service} without health check. Container: [${containerId}] | Status: [${status.toUpperCase()}] |  Health: [${health.toUpperCase()}]`;
 
 const logServiceNotReadyMessage = (
   service: string,
@@ -51,10 +51,10 @@ const logServiceNotReadyMessage = (
   status: string,
   health: string
 ) =>
-  `Service: ${service} is not ready.  Container: [${containerId}] | Status: [${status.toUpperCase()}] |  Health: [${health.toUpperCase()}]\n`;
+  `Service: ${service} is not ready.  Container: [${containerId}] | Status: [${status.toUpperCase()}] |  Health: [${health.toUpperCase()}]`;
 
 const logErrorDuringServiceCheckMessage = (errorMessage: string) =>
-  `\nError during services check: ${errorMessage}`;
+  `Error during services check: ${errorMessage}`;
 
 export async function checkServices(
   options: CheckServicesOptions
