@@ -127,7 +127,7 @@ async function checkAllServices(
         );
 
         if (health.trim() === "N/A" && options.skipNoHealthcheck) {
-          Logger.warning(
+          Logger.info(
             logSkippingNoHealthcheckMessage(
               service,
               containerId,

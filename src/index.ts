@@ -5,14 +5,20 @@ import { Logger } from "./utils/logger";
 
 async function run(): Promise<void> {
   try {
-    const maxRetries: number = parseInt(core.getInput("max-retries"), 10) || 30;
-    const retryInterval: number =
-      parseInt(core.getInput("retry-interval"), 10) || 10;
+    const maxRetries: number = parseInt(
+      process.env.INPUT_MAX_RETRIES || "30",
+      10
+    );
+    const retryInterval: number = parseInt(
+      process.env.INPUT_RETRY_INTERVAL || "10",
+      10
+    );
     const composeFile: string =
-      core.getInput("compose-file") || "docker-compose.yml";
-    const skipExited: boolean = core.getInput("skip-exited") === "true";
+      process.env.INPUT_COMPOSE_FILE || "docker-compose.yml";
+    const skipExited: boolean =
+      (process.env.INPUT_SKIP_EXITED || "").toLowerCase() === "true";
     const skipNoHealthcheck: boolean =
-      core.getInput("skip-no-healthcheck") === "true";
+      (process.env.INPUT_SKIP_NO_HEALTHCHECK || "").toLowerCase() === "true";
 
     Logger.info("Settings:");
     Logger.info(`  Max Retries: ${maxRetries}`);
