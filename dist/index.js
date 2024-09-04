@@ -29176,29 +29176,29 @@ var inspectHealthCommand = function (containerId) {
     return "docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}N/A{{end}}' ".concat(containerId);
 };
 var logAttemptMessage = function (attempt, maxRetries) {
-    return "\n-----------------------\nAttempt ".concat(attempt, " of ").concat(maxRetries);
+    return "-----------------------\nAttempt ".concat(attempt, " of ").concat(maxRetries);
 };
 var logAttemptCompletedMessage = function (attempt, maxRetries, retryInterval) {
-    return "\nAttempt ".concat(attempt, " completed, ").concat(maxRetries - attempt, " left. \nWaiting ").concat(retryInterval, " seconds for containers to become healthy. \n");
+    return "Attempt ".concat(attempt, " completed, ").concat(maxRetries - attempt, " left. \nWaiting ").concat(retryInterval, " seconds for containers to become healthy. ");
 };
 var logNoServicesFoundMessage = "No services found";
 var logNoRunningContainerMessage = function (service) {
-    return "No running container found for service: ".concat(service, "\n");
+    return "No running container found for service: ".concat(service);
 };
 var logSkippingContainerMessage = function (service, containerId) {
-    return "Skipping container ".concat(service, " because it is not running. Container: [").concat(containerId, "]\n");
+    return "Skipping container ".concat(service, " because it is not running. Container: [").concat(containerId, "]");
 };
 var logServiceStatusMessage = function (service, containerId, status, health) {
-    return "Service: ".concat(service, "\n  Container: [").concat(containerId, "] | Status: [").concat(status.toUpperCase(), "] |  Health: [").concat(health.toUpperCase(), "]\n");
+    return "Service: ".concat(service, "\n  Container: [").concat(containerId, "] | Status: [").concat(status.toUpperCase(), "] |  Health: [").concat(health.toUpperCase(), "]");
 };
 var logSkippingNoHealthcheckMessage = function (service, containerId, status, health) {
-    return "Skipping container ".concat(service, " without health check. Container: [").concat(containerId, "] | Status: [").concat(status.toUpperCase(), "] |  Health: [").concat(health.toUpperCase(), "]\n");
+    return "Skipping container ".concat(service, " without health check. Container: [").concat(containerId, "] | Status: [").concat(status.toUpperCase(), "] |  Health: [").concat(health.toUpperCase(), "]");
 };
 var logServiceNotReadyMessage = function (service, containerId, status, health) {
-    return "Service: ".concat(service, " is not ready.  Container: [").concat(containerId, "] | Status: [").concat(status.toUpperCase(), "] |  Health: [").concat(health.toUpperCase(), "]\n");
+    return "Service: ".concat(service, " is not ready.  Container: [").concat(containerId, "] | Status: [").concat(status.toUpperCase(), "] |  Health: [").concat(health.toUpperCase(), "]");
 };
 var logErrorDuringServiceCheckMessage = function (errorMessage) {
-    return "\nError during services check: ".concat(errorMessage);
+    return "Error during services check: ".concat(errorMessage);
 };
 function checkServices(options) {
     return __awaiter(this, void 0, void 0, function () {
