@@ -29280,7 +29280,7 @@ function checkAllServices(options) {
                     health = _b.sent();
                     logger_1.Logger.info(logServiceStatusMessage(service, containerId, status_1.trim(), health.trim()));
                     if (health.trim() === "N/A" && options.skipNoHealthcheck) {
-                        logger_1.Logger.warning(logSkippingNoHealthcheckMessage(service, containerId, status_1.trim(), health.trim()));
+                        logger_1.Logger.info(logSkippingNoHealthcheckMessage(service, containerId, status_1.trim(), health.trim()));
                         return [3, 6];
                     }
                     if (status_1.trim() !== "running" ||
@@ -29456,11 +29456,11 @@ function run() {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 3, , 4]);
-                    maxRetries = parseInt(core.getInput("max-retries"), 10) || 30;
-                    retryInterval = parseInt(core.getInput("retry-interval"), 10) || 10;
-                    composeFile = core.getInput("compose-file") || "docker-compose.yml";
-                    skipExited = core.getInput("skip-exited") === "true";
-                    skipNoHealthcheck = core.getInput("skip-no-healthcheck") === "true";
+                    maxRetries = parseInt(process.env.INPUT_MAX_RETRIES || "30", 10);
+                    retryInterval = parseInt(process.env.INPUT_RETRY_INTERVAL || "10", 10);
+                    composeFile = process.env.INPUT_COMPOSE_FILE || "docker-compose.yml";
+                    skipExited = (process.env.INPUT_SKIP_EXITED || "").toLowerCase() === "true";
+                    skipNoHealthcheck = (process.env.INPUT_SKIP_NO_HEALTHCHECK || "").toLowerCase() === "true";
                     logger_1.Logger.info("Settings:");
                     logger_1.Logger.info("  Max Retries: ".concat(maxRetries));
                     logger_1.Logger.info("  Retry Interval: ".concat(retryInterval, " seconds"));
