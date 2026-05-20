@@ -22,18 +22,5 @@ inputs:
     required: false
     default: "false"
 runs:
-  using: "composite"
-  steps:
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
-    - name: Run the main job (health check)
-      shell: bash
-      env:
-        INPUT_MAX_RETRIES: ${{ inputs.max-retries }}
-        INPUT_RETRY_INTERVAL: ${{ inputs.retry-interval }}
-        INPUT_COMPOSE_FILE: ${{ inputs.compose-file }}
-        INPUT_SKIP_EXITED: ${{ inputs.skip-exited }}
-        INPUT_SKIP_NO_HEALTHCHECK: ${{ inputs.skip-no-healthcheck }}
-      run: node ${{ github.action_path }}/dist/index.js
+  using: "node24"
+  main: "./dist/index.js"

@@ -6,19 +6,19 @@ import { Logger } from "./utils/logger";
 async function run(): Promise<void> {
   try {
     const maxRetries: number = parseInt(
-      process.env.INPUT_MAX_RETRIES || "30",
+      core.getInput("max-retries") || "30",
       10
     );
     const retryInterval: number = parseInt(
-      process.env.INPUT_RETRY_INTERVAL || "10",
+      core.getInput("retry-interval") || "10",
       10
     );
     const composeFile: string =
-      process.env.INPUT_COMPOSE_FILE || "docker-compose.yml";
+      core.getInput("compose-file") || "docker-compose.yml";
     const skipExited: boolean =
-      (process.env.INPUT_SKIP_EXITED || "").toLowerCase() === "true";
+      (core.getInput("skip-exited") || "").toLowerCase() === "true";
     const skipNoHealthcheck: boolean =
-      (process.env.INPUT_SKIP_NO_HEALTHCHECK || "").toLowerCase() === "true";
+      (core.getInput("skip-no-healthcheck") || "").toLowerCase() === "true";
 
     Logger.info("Settings:");
     Logger.info(`  Max Retries: ${maxRetries}`);
